@@ -7,19 +7,19 @@ TEST(RLF, EncodeSimple)
 {
     spdlog::set_level(spdlog::level::debug);
     std::vector<char*> encoded_symbols;
-    auto single_data_size = 4;
-    auto multiple_data = 1;
+    auto single_data_size = 4u;
+    auto multiple_data = 1u;
     auto total_data_size = single_data_size * multiple_data;
-    auto symbol_length = 2;
+    auto symbol_length = 2u;
     auto input_symbol_num = total_data_size / symbol_length;
-    auto seed = 13;
+    auto seed = 13u;
     auto encode_number = input_symbol_num + 10;
     {
         unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
         std::vector<char> data{};
 
         data.resize(total_data_size);
-        for (auto copy_num = 0; copy_num < multiple_data; ++copy_num)
+        for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
             memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
         Codes::Fountain::RLF encoder;
@@ -28,7 +28,7 @@ TEST(RLF, EncodeSimple)
         encoder.set_symbol_length(symbol_length);
 
 
-        for (auto enc_num = 0; enc_num < encode_number; ++enc_num)
+        for (auto enc_num = 0u; enc_num < encode_number; ++enc_num)
             encoded_symbols.push_back(encoder.generate_symbol());
 
         encoder.print_hash_matrix();
@@ -62,19 +62,19 @@ TEST(RLF, EncodeOnTheFly)
 {
     spdlog::set_level(spdlog::level::debug);
     std::vector<char*> encoded_symbols;
-    auto single_data_size = 4;
-    auto multiple_data = 1;
+    auto single_data_size = 4u;
+    auto multiple_data = 1u;
     auto total_data_size = single_data_size * multiple_data;
-    auto symbol_length = 2;
+    auto symbol_length = 2u;
     auto input_symbol_num = total_data_size / symbol_length;
-    auto seed = 13;
+    auto seed = 13u;
     auto encode_number = input_symbol_num + 10;
     {
         unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
         std::vector<char> data{};
 
         data.resize(total_data_size);
-        for (auto copy_num = 0; copy_num < multiple_data; ++copy_num)
+        for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
             memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
         Codes::Fountain::RLF encoder;
@@ -83,7 +83,7 @@ TEST(RLF, EncodeOnTheFly)
         encoder.set_symbol_length(symbol_length);
 
 
-        for (auto enc_num = 0; enc_num < encode_number; ++enc_num)
+        for (auto enc_num = 0u; enc_num < encode_number; ++enc_num)
             encoded_symbols.push_back(encoder.generate_symbol());
 
         encoder.print_hash_matrix();

@@ -16,7 +16,7 @@ RLF::~RLF()
     if (_owner)
         delete[] _input_data;
 
-    for (auto* hash_seq : _hash_bits)
+    for (const auto* hash_seq : _hash_bits)
         delete[] hash_seq;
 
     for (int idx = 0 ; idx < _encoded_data.size() ; ++idx)
