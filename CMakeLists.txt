@@ -4,8 +4,6 @@ if(POLICY CMP0091)
   cmake_policy(SET CMP0091 NEW)
 endif()
 
-set(CMAKE_VERBOSE_MAKEFILE "ON")
-
 # Add project_options v0.20.0
 # https://github.com/cpp-best-practices/project_options
 include(FetchContent)
@@ -47,19 +45,13 @@ dynamic_project_options(
     ENABLE_SANITIZER_UNDEFINED_BEHAVIOR
     ENABLE_COVERAGE
 )
-# By default MSVC use static libs, so it has to be fixed later
+
 add_library(rateless_codes
     include/rlf.h
     src/rlf.cpp
 )
 target_include_directories(rateless_codes PUBLIC include)
 target_link_libraries(rateless_codes PRIVATE spdlog::spdlog)
-# I wish it was simpler one day:
-# https://gitlab.kitware.com/cmake/cmake/-/issues/23246
-# https://discourse.cmake.org/t/mt-staticrelease-doesnt-match-value-md-dynamicrelease/5428/3
-#if(MSVC)
-    #set_property(TARGET rateless_codes PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
-#endif()
 
 if (RATELESS_CODES_ENABLE_TESTS AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     message(STATUS "Compiler id is ${CMAKE_CXX_COMPILER_ID}")
