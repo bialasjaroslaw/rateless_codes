@@ -10,11 +10,11 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(_project_options)
 
 FetchContent_Declare(
-    _spdlog 
+    spdlog
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36 # 1.11.0
 )
-FetchContent_MakeAvailable(_spdlog)
+FetchContent_MakeAvailable(spdlog)
 
 include(${_project_options_SOURCE_DIR}/Index.cmake)
 
