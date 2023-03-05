@@ -14,6 +14,7 @@ FetchContent_Declare(
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
     GIT_TAG ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36 # 1.11.0
 )
+
 FetchContent_MakeAvailable(spdlog)
 
 include(${_project_options_SOURCE_DIR}/Index.cmake)
@@ -41,11 +42,12 @@ dynamic_project_options(
     ENABLE_COVERAGE
 )
 
-add_library(rateless_codes SHARED
+add_library(rateless_codes
     include/rlf.h
     src/rlf.cpp
 )
 target_include_directories(rateless_codes PUBLIC include)
+target_link_libraries(rateless_codes PRIVATE spdlog::spdlog)
 
 if (RATELESS_CODES_ENABLE_TESTS AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     message(STATUS "Compiler id is ${CMAKE_CXX_COMPILER_ID}")
