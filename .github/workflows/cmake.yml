@@ -50,7 +50,7 @@ jobs:
         platform: x64
 
     - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DTEXT_PROCESSING_ENABLE_TESTS=ON
+      run: cmake -B ${{github.workspace}}/build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DRATELESS_CODES_ENABLE_TESTS=ON
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}

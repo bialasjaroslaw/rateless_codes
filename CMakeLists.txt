@@ -48,6 +48,12 @@ add_library(rateless_codes
 )
 target_include_directories(rateless_codes PUBLIC include)
 target_link_libraries(rateless_codes PRIVATE spdlog::spdlog)
+# I wish it was simpler one day:
+# https://gitlab.kitware.com/cmake/cmake/-/issues/23246
+# https://discourse.cmake.org/t/mt-staticrelease-doesnt-match-value-md-dynamicrelease/5428/3
+if(MSVC)
+    set_property(TARGET rateless_codes PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 if (RATELESS_CODES_ENABLE_TESTS AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
     message(STATUS "Compiler id is ${CMAKE_CXX_COMPILER_ID}")
