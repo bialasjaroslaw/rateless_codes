@@ -45,8 +45,8 @@ dynamic_project_options(
     ENABLE_SANITIZER_UNDEFINED_BEHAVIOR
     ENABLE_COVERAGE
 )
-
-add_library(rateless_codes
+# By default MSVC use static libs, so it has to be fixed later
+add_library(rateless_codes STATIC
     include/rlf.h
     src/rlf.cpp
 )
