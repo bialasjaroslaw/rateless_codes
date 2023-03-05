@@ -161,7 +161,7 @@ bool RLF::decode(bool allow_partial)
 
     auto valid_traingle_matrix = _encoded_data.size() >= _input_symbols;
 
-    for (auto idx = 0ul; idx < std::min(_encoded_data.size(), _input_symbols); ++idx)
+    for (auto idx = size_t{0}; idx < std::min(_encoded_data.size(), _input_symbols); ++idx)
     {
         if (_hash_bits[idx][idx] != 1)
         {
