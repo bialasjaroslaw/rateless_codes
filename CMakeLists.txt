@@ -13,14 +13,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(_project_options)
 
-FetchContent_Declare(
-    spdlog
-    GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG ad0e89cbfb4d0c1ce4d097e134eb7be67baebb36 # 1.11.0
-)
-
-FetchContent_MakeAvailable(spdlog)
-
 include(${_project_options_SOURCE_DIR}/Index.cmake)
 
 project(rateless_codes VERSION 0.2 LANGUAGES CXX)
@@ -46,6 +38,9 @@ dynamic_project_options(
     ENABLE_COVERAGE
 )
 
+find_package(spdlog CONFIG REQUIRED)
+find_package(GTest CONFIG REQUIRED)
+
 add_library(rateless_codes
     include/rlf.h
     src/rlf.cpp
@@ -68,25 +63,21 @@ if(RATELESS_CODES_ENABLE_TESTS)
     include(GoogleTest)
 
     enable_testing()
-    FetchContent_Declare(
-	googletest
-	GIT_REPOSITORY https://github.com/google/googletest.git
-	GIT_TAG        58d77fa8070e8cec2dc1ed015d66b454c8d78850 # release-1.12.1
-    )
+
     # For Windows: Prevent overriding the parent project's compiler/linker settings
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
+
     add_executable(main 
-	rlf.cc
+        rlf.cc
     )
 
     target_link_libraries(main 
-	PRIVATE 
-	    rateless_codes 
-	    spdlog::spdlog
-	    gtest_main 
-	    project_options 
-	    project_warnings
+    PRIVATE
+        rateless_codes
+        spdlog::spdlog
+        GTest::gtest_main
+        project_options
+        project_warnings
     )
     gtest_discover_tests(main)
 

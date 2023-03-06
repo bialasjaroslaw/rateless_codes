@@ -40,6 +40,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v3
+      with:
+        submodules: true
+
     - uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Set up Clang
@@ -49,15 +52,23 @@ jobs:
         version: latest
         platform: x64
 
-    - name: Configure CMake
-      run: cmake -B ${{github.workspace}}/build -G "${{matrix.generator}}" -DCMAKE_BUILD_TYPE:STRING=${{matrix.build_type}} -DRATELESS_CODES_ENABLE_TESTS=ON
+    - name: Restore artifacts, or setup vcpkg for building artifacts
+      uses: lukka/run-vcpkg@v10
+      id: runvcpkg
+      with:
+        # This one is not needed, as it is the default value anyway.
+        # vcpkgDirectory: '${{ github.workspace }}/vcpkg'
+        vcpkgGitCommitId: '8daf70c56ba9581f5251a5d4675eb771b6b34957'
+        vcpkgJsonGlob: '**/vcpkg.json'
 
-    - name: Build
-      run: cmake --build ${{github.workspace}}/build --config ${{matrix.build_type}}
-
-    - name: Test
-      working-directory: ${{github.workspace}}/build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest -C ${{matrix.build_type}}
-      
+    - name: Run CMake with vcpkg.json manifest
+      uses: lukka/run-cmake@v10
+      id: runcmake
+      with:
+        cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+        configurePreset: 'ninja-multi-vcpkg'
+        configurePresetAdditionalArgs: '[`-DRATELESS_CODES_ENABLE_TESTS=ON`]'
+        buildPreset: 'ninja-multi-vcpkg'
+        buildPresetAdditionalArgs: '[`--config ${{matrix.build_type}}`]'
+        testPreset: 'ninja-multi-vcpkg'
+        testPresetAdditionalArgs: '[`--config ${{matrix.build_type}}`]'
