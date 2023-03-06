@@ -67,8 +67,8 @@ jobs:
       with:
         cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
         configurePreset: 'ninja-multi-vcpkg'
-        configurePresetAdditionalArgs: ['-DRATELESS_CODES_ENABLE_TESTS=ON']
+        configurePresetAdditionalArgs: '[`-DRATELESS_CODES_ENABLE_TESTS=ON`]'
         buildPreset: 'ninja-multi-vcpkg'
         buildPresetAdditionalArgs: '[`--config ${{matrix.build_type}}`]'
         testPreset: 'ninja-multi-vcpkg'
-        testPresetAdditionalArgs: ['--config ${{matrix.build_type}}']
+        testPresetAdditionalArgs: '[`--config ${{matrix.build_type}}`]'
