@@ -60,6 +60,7 @@ jobs:
         # vcpkgDirectory: '${{ github.workspace }}/vcpkg'
         vcpkgGitCommitId: '8daf70c56ba9581f5251a5d4675eb771b6b34957'
         vcpkgJsonGlob: '**/vcpkg.json'
+        appendedCacheKey: 'compiler=${{matrix.compiler}}'
 
     - name: Run CMake with vcpkg.json manifest
       uses: lukka/run-cmake@v10
