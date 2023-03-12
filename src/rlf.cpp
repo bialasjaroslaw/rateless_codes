@@ -19,8 +19,8 @@ RLF::~RLF()
     for (const auto* hash_seq : _hash_bits)
         delete[] hash_seq;
 
-    for (int idx = 0 ; idx < _encoded_data.size() ; ++idx)
-        if(_encoded_data_copy[idx])
+    for (int idx = 0; idx < _encoded_data.size(); ++idx)
+        if (_encoded_data_copy[idx])
             delete[] _encoded_data[idx];
 }
 
@@ -57,11 +57,11 @@ char* RLF::generate_symbol()
 
     // debug only
 
+    shuffle_input_symbols();
+
     auto hash_sequence = new uint8_t[_input_symbols];
     for (auto idx = 0; idx < _input_symbols; ++idx)
-        hash_sequence[idx] = _uniform_dist(_random_engine);
-    ++_current_symbol;
-
+        hash_sequence[idx] = _current_hash_bits[idx];
     _hash_bits.push_back(hash_sequence);
 
 
@@ -82,6 +82,21 @@ void RLF::set_seed(uint32_t seed)
     _random_engine.seed(seed);
 }
 
+void RLF::shuffle_input_symbols(bool discard)
+{
+    if (!discard)
+    {
+        _current_hash_bits.resize(_input_symbols);
+        memset(_current_hash_bits.data(), 0, _input_symbols);
+    }
+    for (auto idx = 0; idx < _input_symbols; ++idx)
+        if (!discard)
+            _current_hash_bits[idx] = _uniform_dist(_random_engine);
+        else
+            _uniform_dist(_random_engine);
+    ++_current_symbol;
+}
+
 void RLF::feed_symbol(char* ptr, size_t number, bool deep_copy)
 {
     auto symbol = ptr;
@@ -93,18 +108,12 @@ void RLF::feed_symbol(char* ptr, size_t number, bool deep_copy)
     _encoded_data_copy.push_back(deep_copy);
     _encoded_data.push_back(symbol);
 
-    while (_current_symbol != number)
-    {
-        for (auto idx = 0; idx < _input_symbols; ++idx)
-            _uniform_dist(_random_engine);
-        ++_current_symbol;
-    }
+    while (_current_symbol != number + 1)
+        shuffle_input_symbols(_current_symbol != number);
 
     auto hash_sequence = new uint8_t[_input_symbols];
     for (auto idx = 0; idx < _input_symbols; ++idx)
-        hash_sequence[idx] = _uniform_dist(_random_engine);
-    ++_current_symbol;
-
+        hash_sequence[idx] = _current_hash_bits[idx];
     _hash_bits.push_back(hash_sequence);
 }
 

@@ -17,6 +17,7 @@ public:
     void set_input_data_size(size_t len);
     char* generate_symbol();
     void set_seed(uint32_t seed);
+    void shuffle_input_symbols(bool discard = false);
 
     void feed_symbol(char* ptr, size_t number, bool deep_copy = false);
     bool decode(bool allow_partial = false);
@@ -35,6 +36,7 @@ public:
     std::vector<char*> _encoded_data;
     std::vector<bool> _encoded_data_copy;
     std::vector<uint8_t*> _hash_bits;
+    std::vector<uint8_t> _current_hash_bits;
     size_t _current_symbol = 0;
 
 

@@ -1,4 +1,4 @@
-#include "rlf.h"
+#include "lt.h"
 
 #include <gmock/gmock-matchers.h>
 #include <gmock/gmock-more-matchers.h>
@@ -7,12 +7,40 @@
 
 using namespace testing;
 
-TEST(RLF, EncodeSimple)
+TEST(LT, DegreeDistribution)
+{
+    spdlog::set_level(spdlog::level::debug);
+    auto total_data_size = 10u;
+    auto total_samples = 1'000'000u;
+    auto symbol_length = 1u;
+    auto distribution_len = total_data_size / symbol_length;
+    auto seed = 13u;
+    Codes::Fountain::LT encoder;
+    encoder.set_seed(seed);
+    encoder.set_input_data_size(total_data_size);
+    encoder.set_symbol_length(symbol_length);
+
+    std::vector<size_t> distribution(distribution_len, 0);
+    std::vector<double> expected;
+    expected.resize(distribution_len);
+
+    expected[0] = 1.0 / distribution_len;
+    for (auto idx = 1u; idx < distribution_len; ++idx)
+        expected[idx] = 1.0 / (idx + 1) / idx;
+
+    for (auto idx = 0u; idx < total_samples; ++idx)
+        ++distribution[encoder.symbol_degree() - 1];
+
+    for (auto idx = 0u; idx < distribution_len; ++idx)
+        EXPECT_THAT(expected[idx], DoubleNear(distribution[idx] / static_cast<double>(total_samples), 0.001));
+}
+
+TEST(LT, EncodeSimple)
 {
     spdlog::set_level(spdlog::level::debug);
     std::vector<char*> encoded_symbols;
     auto single_data_size = 4u;
-    auto multiple_data = 1u;
+    auto multiple_data = 4u;
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto input_symbol_num = total_data_size / symbol_length;
@@ -26,7 +54,7 @@ TEST(RLF, EncodeSimple)
         for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
             memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
-        Codes::Fountain::RLF encoder;
+        Codes::Fountain::LT encoder;
         encoder.set_seed(seed);
         encoder.set_input_data(data.data(), data.size(), true);
         encoder.set_symbol_length(symbol_length);
@@ -38,13 +66,13 @@ TEST(RLF, EncodeSimple)
         encoder.print_hash_matrix();
     }
     {
-        Codes::Fountain::RLF decoder;
+        Codes::Fountain::LT decoder;
         decoder.set_seed(seed);
         decoder.set_input_data_size(total_data_size);
         decoder.set_symbol_length(symbol_length);
 
         for (auto enc_num = 0u; enc_num < encoded_symbols.size(); ++enc_num)
-            decoder.feed_symbol(encoded_symbols[enc_num], enc_num, true);
+            decoder.feed_symbol(encoded_symbols[enc_num], enc_num, true, false);
 
         decoder.print_hash_matrix();
 
@@ -62,12 +90,12 @@ TEST(RLF, EncodeSimple)
         delete[] encoded_symbol;
 }
 
-TEST(RLF, EncodeOnTheFly)
+TEST(LT, EncodeOnTheFly)
 {
     spdlog::set_level(spdlog::level::debug);
     std::vector<char*> encoded_symbols;
     auto single_data_size = 4u;
-    auto multiple_data = 1u;
+    auto multiple_data = 4u;
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto input_symbol_num = total_data_size / symbol_length;
@@ -81,7 +109,7 @@ TEST(RLF, EncodeOnTheFly)
         for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
             memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
-        Codes::Fountain::RLF encoder;
+        Codes::Fountain::LT encoder;
         encoder.set_seed(seed);
         encoder.set_input_data(data.data(), data.size(), true);
         encoder.set_symbol_length(symbol_length);
@@ -93,7 +121,7 @@ TEST(RLF, EncodeOnTheFly)
         encoder.print_hash_matrix();
     }
     {
-        Codes::Fountain::RLF decoder;
+        Codes::Fountain::LT decoder;
         decoder.set_seed(seed);
         decoder.set_input_data_size(total_data_size);
         decoder.set_symbol_length(symbol_length);

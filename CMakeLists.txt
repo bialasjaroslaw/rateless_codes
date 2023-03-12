@@ -41,9 +41,18 @@ dynamic_project_options(
 find_package(spdlog CONFIG REQUIRED)
 find_package(GTest CONFIG REQUIRED)
 
-add_library(rateless_codes
-    include/rlf.h
+set(SOURCES
     src/rlf.cpp
+    src/lt.cpp
+)
+
+set(HEADERS
+    include/rlf.h
+    include/lt.h
+)
+
+add_library(rateless_codes
+    ${SOURCES} ${HEADERS}
 )
 target_include_directories(rateless_codes PUBLIC include)
 target_link_libraries(rateless_codes PRIVATE spdlog::spdlog)
@@ -69,6 +78,7 @@ if(RATELESS_CODES_ENABLE_TESTS)
 
     add_executable(main 
         rlf.cc
+        lt.cc
     )
 
     target_link_libraries(main 
