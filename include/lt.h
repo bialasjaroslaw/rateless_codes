@@ -57,6 +57,7 @@ public:
     void set_seed(uint32_t seed);
     size_t symbol_degree();
     void shuffle_input_symbols(bool discard = false);
+    void select_symbols(size_t num, size_t max, bool discard = false);
 
     void feed_symbol(char* ptr, size_t number, bool deep_copy = false, bool start_decoding = true);
     bool decode(bool allow_partial = false);
@@ -75,7 +76,8 @@ public:
     bool _owner = false;
 
     std::vector<uint8_t*> _hash_bits;
-    std::vector<uint8_t> _current_hash_bits;
+    std::vector<uint32_t> _current_hash_bits;
+    std::vector<uint32_t> _samples;
     size_t _current_symbol = 0;
 
     std::default_random_engine _random_engine;
