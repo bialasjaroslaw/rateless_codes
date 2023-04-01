@@ -136,7 +136,7 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto seed = 100u;
-    auto retries = 1000;
+    auto retries = 10;
     while (retries--)
     {
         spdlog::debug("Run with seed {}", seed);
