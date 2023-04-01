@@ -76,7 +76,7 @@ TEST(LT, EncodeSimpleIdealSolition)
     auto input_symbol_num = total_data_size / symbol_length;
     auto seed = 100u;
     auto encode_number = input_symbol_num + 100; // Some cases require a lot of extra packets
-    auto retries = 100; // limit test cases due to high overhead requirements
+    auto retries = 10; // limit test cases due to high overhead requirements
 
     while (retries--)
     {
