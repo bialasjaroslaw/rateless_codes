@@ -2,6 +2,7 @@ name: CMake
 
 env:
   ACTIONS_RUNNER_DEBUG: true
+  CTEST_OUTPUT_ON_FAILURE: 1
 
 on:
   push:
