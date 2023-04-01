@@ -1,5 +1,8 @@
 name: CMake
 
+env:
+  ACTIONS_RUNNER_DEBUG: true
+
 on:
   push:
     tags:
