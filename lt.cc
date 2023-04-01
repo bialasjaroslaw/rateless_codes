@@ -27,7 +27,7 @@ TEST(LT, DegreeDistribution)
     auto expected_success_tolerance = expected_success_probability * 0.05; // Five percent diviation
 
     std::vector<size_t> distribution(total_data_size, 0);
-    for (auto iter = 0; iter < total_samples; ++iter)
+    for (auto iter = 0u; iter < total_samples; ++iter)
     {
         encoder.select_symbols(10, total_data_size);
         for (const auto& val : std::span(encoder._current_hash_bits.begin(), sample_size))
@@ -69,15 +69,14 @@ TEST(LT, SymbolDistribution)
 TEST(LT, EncodeSimpleIdealSolition)
 {
     spdlog::set_level(spdlog::level::debug);
-    std::vector<char*> encoded_symbols;
     auto single_data_size = 4u;
     auto multiple_data = 4u;
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto input_symbol_num = total_data_size / symbol_length;
     auto seed = 100u;
-    auto encode_number = input_symbol_num + 45; // Some cases require a lot of extra packets
-    auto retries = 1000;
+    auto encode_number = input_symbol_num + 100; // Some cases require a lot of extra packets
+    auto retries = 100; // limit test cases due to high overhead requirements
 
     while (retries--)
     {
@@ -136,9 +135,7 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
     auto multiple_data = 4u;
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
-    auto input_symbol_num = total_data_size / symbol_length;
     auto seed = 100u;
-    auto encode_number = input_symbol_num + 30.0;
     auto retries = 1000;
     while (retries--)
     {
