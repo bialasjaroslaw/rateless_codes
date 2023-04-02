@@ -2,8 +2,6 @@
 
 #include <span>
 
-#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
-
 #include <gmock/gmock-matchers.h>
 #include <gmock/gmock-more-matchers.h>
 #include <gtest/gtest.h>
@@ -78,11 +76,10 @@ TEST(LT, EncodeSimpleIdealSolition)
     auto input_symbol_num = total_data_size / symbol_length;
     auto seed = 100u;
     auto encode_number = input_symbol_num + 100; // Some cases require a lot of extra packets
-    auto retries = 10; // limit test cases due to high overhead requirements
+    auto retries = 1000;
 
     while (retries--)
     {
-        spdlog::debug("Run with seed {}", seed);
         std::vector<char> data{};
         std::vector<char*> encoded_symbols;
         {
@@ -138,12 +135,12 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto seed = 100u;
-    auto retries = 10;
+    auto retries = 1000;
     while (retries--)
     {
-        spdlog::debug("Run with seed {}", seed);
-        std::vector<char> data{};
+        std::vector<char*> encoded_symbols;
         {
+            std::vector<char> data{};
             unsigned char raw_data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
 
             data.resize(total_data_size);
@@ -164,7 +161,9 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
 
             while (true)
             {
-                decoder.feed_symbol(encoder.generate_symbol(), enc_num, true);
+                auto symbol = encoder.generate_symbol();
+                encoded_symbols.push_back(symbol);
+                decoder.feed_symbol(symbol, enc_num);
                 already_decoded = decoder.decode(true);
                 if (already_decoded)
                     break;
@@ -172,7 +171,6 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
             }
 
             ASSERT_TRUE(already_decoded);
-            spdlog::debug("Required {} packets for decoding", enc_num);
             auto* payload = decoder.decoded_buffer();
             std::vector<char> decoded;
             decoded.resize(total_data_size);
@@ -181,6 +179,8 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
 
             ASSERT_THAT(decoded, Eq(data));
         }
+        for (const auto* encoded_symbol : encoded_symbols)
+            delete[] encoded_symbol;
         ++seed;
     }
 }
