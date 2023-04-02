@@ -24,7 +24,7 @@ TEST(LT, DegreeDistribution)
     encoder.set_symbol_length(symbol_length);
 
     auto expected_success_probability = static_cast<double>(sample_size) / total_data_size;
-    auto expected_success_tolerance = expected_success_probability * 0.05; // Five percent diviation
+    auto expected_success_tolerance = expected_success_probability * 0.05; // Five percent deviation
 
     std::vector<size_t> distribution(total_data_size, 0);
     for (auto iter = 0u; iter < total_samples; ++iter)
