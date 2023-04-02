@@ -16,7 +16,6 @@ TEST(LT, DegreeDistribution)
     auto sample_size = 10u;
     auto total_samples = 100'000u;
     auto symbol_length = 1u;
-    auto distribution_len = total_data_size / symbol_length;
     auto seed = 13u;
     Codes::Fountain::LT encoder;
     encoder.set_seed(seed);
@@ -34,8 +33,9 @@ TEST(LT, DegreeDistribution)
             ++distribution[val];
     }
 
-    for (auto idx = 0u; idx < distribution_len; ++idx)
-        EXPECT_THAT(distribution[idx] / static_cast<double>(total_samples), DoubleNear(expected_success_probability, expected_success_tolerance));
+    for (auto distribution_val : distribution)
+        EXPECT_THAT(static_cast<double>(distribution_val) / static_cast<double>(total_samples),
+                    DoubleNear(expected_success_probability, expected_success_tolerance));
 }
 
 TEST(LT, SymbolDistribution)
@@ -63,7 +63,8 @@ TEST(LT, SymbolDistribution)
         ++distribution[encoder.symbol_degree() - 1];
 
     for (auto idx = 0u; idx < distribution_len; ++idx)
-        EXPECT_THAT(distribution[idx] / static_cast<double>(total_samples), DoubleNear(expected[idx], 0.001));
+        EXPECT_THAT(static_cast<double>(distribution[idx]) / static_cast<double>(total_samples),
+                    DoubleNear(expected[idx], 0.001));
 }
 
 TEST(LT, EncodeSimpleIdealSolition)
