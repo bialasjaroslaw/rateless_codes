@@ -2,6 +2,8 @@
 
 #include "ideal_soliton_distribution.h"
 
+#include <numeric>
+
 namespace Codes::Fountain {
 
 RobustSolitonDistribution::RobustSolitonDistribution(double delta, double c)
