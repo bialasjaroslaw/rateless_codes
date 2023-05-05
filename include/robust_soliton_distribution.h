@@ -10,7 +10,7 @@ namespace Codes::Fountain {
 class RobustSolitonDistribution : public DegreeDistribution
 {
 public:
-    RobustSolitonDistribution();
+    RobustSolitonDistribution(double delta, double c);
     virtual ~RobustSolitonDistribution() = default;
 
     void set_seed(uint32_t seed) override;
@@ -23,5 +23,7 @@ private:
     std::uniform_real_distribution<double> _degree_dist;
     size_t _input_size = 0;
     std::vector<double> _cumulative_probabilities;
+    double _delta = 0.01;
+    double _c = 0.75;
 };
 } // namespace Codes::Fountain

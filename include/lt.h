@@ -2,11 +2,14 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 #include <random>
+#include <vector>
 
-#include "node.h"
+#include <cstring>
+
 #include "degree_distribution.h"
+#include "node.h"
+#include "well512.h"
 
 namespace Codes::Fountain {
 
@@ -25,7 +28,7 @@ public:
     void shuffle_input_symbols(bool discard = false);
     void select_symbols(size_t num, size_t max, bool discard = false);
 
-    void feed_symbol(char* ptr, size_t number, bool deep_copy = false, bool start_decoding = true);
+    bool feed_symbol(char* ptr, size_t number, bool deep_copy = false, bool start_decoding = true);
     bool decode(bool allow_partial = false);
     void process_encoded_node(size_t num);
     void process_input_node(size_t num);
@@ -41,12 +44,11 @@ public:
     char* _input_data = nullptr;
     bool _owner = false;
 
-    std::vector<uint8_t*> _hash_bits;
     std::vector<uint32_t> _current_hash_bits;
     std::vector<uint32_t> _samples;
     size_t _current_symbol = 0;
 
-    std::default_random_engine _random_engine;
+    well_512 _generator;
 
     std::vector<Node> _data_nodes;
     std::vector<Node> _encoded_nodes;

@@ -4,8 +4,10 @@
 
 namespace Codes::Fountain {
 
-RobustSolitonDistribution::RobustSolitonDistribution()
+RobustSolitonDistribution::RobustSolitonDistribution(double delta, double c)
     : _degree_dist(std::uniform_real_distribution<double>())
+    , _delta(delta)
+    , _c(c)
 {}
 
 void RobustSolitonDistribution::set_seed(uint32_t seed)
@@ -37,11 +39,13 @@ size_t RobustSolitonDistribution::symbol_degree()
 std::vector<double> RobustSolitonDistribution::expected_distribution(size_t input_symbols)
 {
     std::vector<double> expected = IdealSolitonDistribution().expected_distribution(input_symbols);
+    if (expected.size() == 0)
+        return expected;
 
-    auto failure_prob = 0.01;
-    auto some_const = 0.1;
+    auto failure_prob = _delta;
+    auto some_const = _c;
     auto R = some_const * std::log(input_symbols / failure_prob) * std::sqrt(input_symbols);
-    auto spike_loc = static_cast<size_t>(std::ceil(input_symbols / R));
+    auto spike_loc = std::min(expected.size() - 1, static_cast<size_t>(std::ceil(input_symbols / R)));
 
     for (auto idx = 0u; idx < spike_loc; ++idx)
         expected[idx] += R / input_symbols / (idx + 1);
