@@ -54,6 +54,7 @@ void LT::set_symbol_length(size_t len)
 void LT::set_input_data_size(size_t len)
 {
     _input_data_size = len;
+    _degree_dist->set_input_size(len);
 }
 
 char* LT::generate_symbol()
@@ -93,7 +94,7 @@ void LT::set_seed(uint32_t seed)
 
 size_t LT::symbol_degree()
 {
-    return _degree_dist->symbol_degree(_input_symbols);
+    return _degree_dist->symbol_degree();
 }
 
 void LT::shuffle_input_symbols(bool discard)

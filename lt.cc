@@ -1,5 +1,6 @@
 #include "lt.h"
 #include "ideal_soliton_distribution.h"
+#include "robust_soliton_distribution.h"
 
 #include <span>
 
@@ -10,7 +11,7 @@
 
 using namespace testing;
 
-TEST(LT, DegreeDistribution)
+TEST(LT, SymbolDistribution)
 {
     spdlog::set_level(spdlog::level::debug);
     auto total_data_size = 100u;
@@ -23,42 +24,63 @@ TEST(LT, DegreeDistribution)
     encoder.set_input_data_size(total_data_size);
     encoder.set_symbol_length(symbol_length);
 
-    auto expected_success_probability = static_cast<double>(sample_size) / total_data_size;
-    auto expected_success_tolerance = expected_success_probability * 0.05; // Five percent deviation
+    auto expected_selection_probability = static_cast<double>(sample_size) / total_data_size;
+    auto expected_selection_tolerance = expected_selection_probability * 0.05; // Five percent deviation
 
     std::vector<size_t> distribution(total_data_size, 0);
     for (auto iter = 0u; iter < total_samples; ++iter)
     {
-        encoder.select_symbols(10, total_data_size);
+        encoder.select_symbols(sample_size, total_data_size);
         for (const auto& val : std::span(encoder._current_hash_bits.begin(), sample_size))
             ++distribution[val];
     }
 
     for (auto distribution_val : distribution)
         EXPECT_THAT(static_cast<double>(distribution_val) / static_cast<double>(total_samples),
-                    DoubleNear(expected_success_probability, expected_success_tolerance));
+                    DoubleNear(expected_selection_probability, expected_selection_tolerance));
 }
 
-TEST(LT, SymbolDistribution)
+TEST(LT, IdealDegreeDistribution)
 {
+    using DistributionType = Codes::Fountain::IdealSolitonDistribution;
     spdlog::set_level(spdlog::level::debug);
     auto total_data_size = 10u;
     auto total_samples = 1'000'000u;
     auto symbol_length = 1u;
     auto distribution_len = total_data_size / symbol_length;
     auto seed = 13u;
-    Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
+    Codes::Fountain::LT encoder(new DistributionType);
     encoder.set_seed(seed);
     encoder.set_input_data_size(total_data_size);
     encoder.set_symbol_length(symbol_length);
 
     std::vector<size_t> distribution(distribution_len, 0);
-    std::vector<double> expected;
-    expected.resize(distribution_len);
+    std::vector<double> expected = DistributionType().expected_distribution(distribution_len);
 
-    expected[0] = 1.0 / distribution_len;
-    for (auto idx = 1u; idx < distribution_len; ++idx)
-        expected[idx] = 1.0 / (idx + 1) / idx;
+    for (auto idx = 0u; idx < total_samples; ++idx)
+        ++distribution[encoder.symbol_degree() - 1];
+
+    for (auto idx = 0u; idx < distribution_len; ++idx)
+        EXPECT_THAT(static_cast<double>(distribution[idx]) / static_cast<double>(total_samples),
+                    DoubleNear(expected[idx], 0.001));
+}
+
+TEST(LT, RobustDegreeDistribution)
+{
+    using DistributionType = Codes::Fountain::RobustSolitonDistribution;
+    spdlog::set_level(spdlog::level::debug);
+    auto total_data_size = 10u;
+    auto total_samples = 1'000'000u;
+    auto symbol_length = 1u;
+    auto distribution_len = total_data_size / symbol_length;
+    auto seed = 13u;
+    Codes::Fountain::LT encoder(new DistributionType);
+    encoder.set_seed(seed);
+    encoder.set_input_data_size(total_data_size);
+    encoder.set_symbol_length(symbol_length);
+
+    std::vector<size_t> distribution(distribution_len, 0);
+    std::vector<double> expected = DistributionType().expected_distribution(distribution_len);
 
     for (auto idx = 0u; idx < total_samples; ++idx)
         ++distribution[encoder.symbol_degree() - 1];
@@ -85,7 +107,7 @@ TEST(LT, EncodeSimpleIdealSolition)
         std::vector<char> data{};
         std::vector<char*> encoded_symbols;
         {
-            unsigned char raw_data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+            unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
 
             data.resize(total_data_size);
             for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
@@ -143,7 +165,7 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
         std::vector<char*> encoded_symbols;
         {
             std::vector<char> data{};
-            unsigned char raw_data[] = { 0xDE, 0xAD, 0xBE, 0xEF };
+            unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
 
             data.resize(total_data_size);
             for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
