@@ -44,11 +44,13 @@ find_package(GTest CONFIG REQUIRED)
 set(SOURCES
     src/rlf.cpp
     src/lt.cpp
+    src/node.cpp
 )
 
 set(HEADERS
     include/rlf.h
     include/lt.h
+    include/node.h
 )
 
 add_library(rateless_codes

@@ -1,48 +1,13 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include <cstring>
-#include <map>
-#include <memory>
+#include <vector>
 #include <random>
-#include <set>
 
+#include "node.h"
 
-namespace Codes {
-namespace Fountain {
-
-struct Node
-{
-    Node() = default;
-    Node(char* ptr, size_t data_length, bool deep_copy = false)
-    {
-        if (ptr && deep_copy)
-        {
-            data.reset(new char[data_length]);
-            memcpy(data.get(), ptr, data_length);
-            owner = true;
-        }
-        else
-        {
-            owner = false;
-            data.reset(ptr);
-        }
-    }
-    Node(Node&&) = default;
-    ~Node()
-    {
-        if (!owner)
-            data.release();
-    }
-    char& operator[](size_t idx)
-    {
-        return data.get()[idx];
-    }
-    std::set<size_t> edges;
-    std::unique_ptr<char[]> data;
-    bool known = false;
-    bool owner = true;
-};
+namespace Codes::Fountain {
 
 class LT
 {
@@ -91,5 +56,4 @@ public:
 
     size_t _unknown_blocks = 0;
 };
-} // namespace Fountain
-} // namespace Codes
+} // namespace Codes::Fountain
