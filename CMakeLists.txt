@@ -45,12 +45,16 @@ set(SOURCES
     src/rlf.cpp
     src/lt.cpp
     src/node.cpp
+    src/degree_distribution.cpp
+    src/ideal_soliton_distribution.cpp
 )
 
 set(HEADERS
     include/rlf.h
     include/lt.h
     include/node.h
+    include/degree_distribution.h
+    include/ideal_soliton_distribution.h
 )
 
 add_library(rateless_codes

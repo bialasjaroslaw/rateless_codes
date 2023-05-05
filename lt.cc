@@ -1,4 +1,5 @@
 #include "lt.h"
+#include "ideal_soliton_distribution.h"
 
 #include <span>
 
@@ -17,7 +18,7 @@ TEST(LT, DegreeDistribution)
     auto total_samples = 100'000u;
     auto symbol_length = 1u;
     auto seed = 13u;
-    Codes::Fountain::LT encoder;
+    Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
     encoder.set_seed(seed);
     encoder.set_input_data_size(total_data_size);
     encoder.set_symbol_length(symbol_length);
@@ -46,7 +47,7 @@ TEST(LT, SymbolDistribution)
     auto symbol_length = 1u;
     auto distribution_len = total_data_size / symbol_length;
     auto seed = 13u;
-    Codes::Fountain::LT encoder;
+    Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
     encoder.set_seed(seed);
     encoder.set_input_data_size(total_data_size);
     encoder.set_symbol_length(symbol_length);
@@ -90,7 +91,7 @@ TEST(LT, EncodeSimpleIdealSolition)
             for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
                 memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
-            Codes::Fountain::LT encoder;
+            Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
             encoder.set_seed(seed);
             encoder.set_input_data(data.data(), data.size(), true);
             encoder.set_symbol_length(symbol_length);
@@ -102,7 +103,7 @@ TEST(LT, EncodeSimpleIdealSolition)
             encoder.print_hash_matrix();
         }
         {
-            Codes::Fountain::LT decoder;
+            Codes::Fountain::LT decoder(new Codes::Fountain::IdealSolitonDistribution);
             decoder.set_seed(seed);
             decoder.set_input_data_size(total_data_size);
             decoder.set_symbol_length(symbol_length);
@@ -148,12 +149,12 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
             for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
                 memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
-            Codes::Fountain::LT encoder;
+            Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
             encoder.set_seed(seed);
             encoder.set_input_data(data.data(), data.size(), true);
             encoder.set_symbol_length(symbol_length);
 
-            Codes::Fountain::LT decoder;
+            Codes::Fountain::LT decoder(new Codes::Fountain::IdealSolitonDistribution);
             decoder.set_seed(seed);
             decoder.set_input_data_size(total_data_size);
             decoder.set_symbol_length(symbol_length);

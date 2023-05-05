@@ -6,13 +6,14 @@
 #include <random>
 
 #include "node.h"
+#include "degree_distribution.h"
 
 namespace Codes::Fountain {
 
 class LT
 {
 public:
-    LT();
+    explicit LT(DegreeDistribution* distribution);
     virtual ~LT();
 
     void set_input_data(char* ptr, size_t len, bool deep_copy = false);
@@ -33,7 +34,7 @@ public:
 
     void print_hash_matrix();
 
-
+    std::unique_ptr<DegreeDistribution> _degree_dist;
     size_t _symbol_length = 0;
     size_t _input_symbols = 0;
     size_t _input_data_size = 0;
@@ -46,7 +47,6 @@ public:
     size_t _current_symbol = 0;
 
     std::default_random_engine _random_engine;
-    std::uniform_real_distribution<double> _degree_dist;
 
     std::vector<Node> _data_nodes;
     std::vector<Node> _encoded_nodes;

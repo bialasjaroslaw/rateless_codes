@@ -8,8 +8,8 @@
 
 namespace Codes::Fountain {
 
-LT::LT()
-    : _degree_dist(std::uniform_real_distribution<double>())
+LT::LT(DegreeDistribution* distribution)
+    : _degree_dist(distribution)
 {}
 
 LT::~LT()
@@ -88,12 +88,12 @@ char* LT::generate_symbol()
 void LT::set_seed(uint32_t seed)
 {
     _random_engine.seed(seed);
+    _degree_dist->set_seed(seed);
 }
 
 size_t LT::symbol_degree()
 {
-    auto value = 1.0 / (1.0 - _degree_dist(_random_engine));
-    return value < _input_symbols ? std::ceil(value) : 1;
+    return _degree_dist->symbol_degree(_input_symbols);
 }
 
 void LT::shuffle_input_symbols(bool discard)
@@ -141,7 +141,7 @@ void LT::feed_symbol(char* ptr, size_t number, bool deep_copy, bool start_decodi
     _hash_bits.push_back(hash_sequence);
 
     spdlog::trace("Received symbol {} connected to {}", number, fmt::join(_current_hash_bits, ", "));
-    spdlog::trace("Data: {:#x} {:#x}", static_cast<unsigned char>(*ptr), static_cast<unsigned char>(*(ptr+1)));
+    spdlog::trace("Data: {:#x} {:#x}", static_cast<unsigned char>(*ptr), static_cast<unsigned char>(*(ptr + 1)));
 
     Node node(ptr, _symbol_length, deep_copy);
     node.edges = std::set<size_t>(_current_hash_bits.cbegin(), _current_hash_bits.cend());
@@ -152,12 +152,14 @@ void LT::feed_symbol(char* ptr, size_t number, bool deep_copy, bool start_decodi
         {
             spdlog::trace("Reducing symbol {}, data {} already known", number, input_node_num);
             spdlog::trace("Befeore {} connected with {}", number, fmt::join(node.edges, ", "));
-            spdlog::trace("Data: {:#x} {:#x}", static_cast<unsigned char>(*ptr), static_cast<unsigned char>(*(ptr + 1)));
+            spdlog::trace("Data: {:#x} {:#x}", static_cast<unsigned char>(*ptr),
+                          static_cast<unsigned char>(*(ptr + 1)));
             node.edges.erase(input_node_num);
             for (auto sym_idx = 0; sym_idx < _symbol_length; ++sym_idx)
                 ptr[sym_idx] ^= _data_nodes[input_node_num][sym_idx];
             spdlog::trace("After {} connected with {}", number, fmt::join(node.edges, ", "));
-            spdlog::trace("Data: {:#x} {:#x}", static_cast<unsigned char>(*ptr), static_cast<unsigned char>(*(ptr+1)));
+            spdlog::trace("Data: {:#x} {:#x}", static_cast<unsigned char>(*ptr),
+                          static_cast<unsigned char>(*(ptr + 1)));
         }
         _data_nodes[input_node_num].edges.insert(number);
     }
@@ -231,8 +233,8 @@ void LT::process_encoded_node(size_t num)
     _data_nodes[edge].edges.erase(num);
     spdlog::trace("After, data {} connected with {}", edge, fmt::join(_data_nodes[edge].edges, ", "));
     auto dd = _data_nodes[edge].data.get();
-    spdlog::trace("Decoded data {}: {:#x}, {:#x}", edge,
-        static_cast<unsigned char>(*dd), static_cast<unsigned char>(*(dd+1)));
+    spdlog::trace("Decoded data {}: {:#x}, {:#x}", edge, static_cast<unsigned char>(*dd),
+                  static_cast<unsigned char>(*(dd + 1)));
     --_unknown_blocks;
     spdlog::trace("Schedule data {} release", edge);
     _data_queue.push_back(edge);
@@ -287,8 +289,9 @@ void LT::print_hash_matrix()
     for (auto idx = 0; idx < _data_nodes.size(); ++idx)
     {
         auto dd = _data_nodes[idx].data.get();
-        if(_data_nodes[idx].known)
-            spdlog::trace("{} K {:#x} {:#x}", idx, static_cast<unsigned char>(*dd), static_cast<unsigned char>(*(dd+1)));
+        if (_data_nodes[idx].known)
+            spdlog::trace("{} K {:#x} {:#x}", idx, static_cast<unsigned char>(*dd),
+                          static_cast<unsigned char>(*(dd + 1)));
         else
             spdlog::trace("{} {}", idx, fmt::join(_data_nodes[idx].edges, ", "));
     }
@@ -297,7 +300,8 @@ void LT::print_hash_matrix()
     {
         auto dd = _encoded_nodes[idx].data.get();
         if (dd != nullptr)
-            spdlog::trace("{} {} {:#x} {:#x}", idx, fmt::join(_encoded_nodes[idx].edges, ", "), static_cast<unsigned char>(*dd), static_cast<unsigned char>(*(dd + 1)));
+            spdlog::trace("{} {} {:#x} {:#x}", idx, fmt::join(_encoded_nodes[idx].edges, ", "),
+                          static_cast<unsigned char>(*dd), static_cast<unsigned char>(*(dd + 1)));
         else
             spdlog::trace("{} {}", idx, fmt::join(_encoded_nodes[idx].edges, ", "));
     }
