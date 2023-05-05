@@ -2,12 +2,28 @@
 #include "ideal_soliton_distribution.h"
 #include "robust_soliton_distribution.h"
 
+#include <numeric>
 #include <span>
 
 #include <gmock/gmock-matchers.h>
 #include <gmock/gmock-more-matchers.h>
 #include <gtest/gtest.h>
 #include <spdlog/spdlog.h>
+
+template <typename T>
+T variance(const std::vector<T>& vec)
+{
+    const size_t sz = vec.size();
+    if (sz <= 1)
+    {
+        return 0.0;
+    }
+    const T mean = std::accumulate(vec.begin(), vec.end(), 0.0) / sz;
+    auto variance_func = [&mean, &sz](T accumulator, const T& val) {
+        return accumulator + ((val - mean) * (val - mean) / (sz - 1));
+    };
+    return std::accumulate(vec.begin(), vec.end(), 0.0, variance_func);
+}
 
 using namespace testing;
 
@@ -210,21 +226,6 @@ TEST(LT, EncodeSimpleRobustSolition)
             delete[] encoded_symbol;
         ++seed;
     }
-}
-
-template <typename T>
-T variance(const std::vector<T>& vec)
-{
-    const size_t sz = vec.size();
-    if (sz <= 1)
-    {
-        return 0.0;
-    }
-    const T mean = std::accumulate(vec.begin(), vec.end(), 0.0) / sz;
-    auto variance_func = [&mean, &sz](T accumulator, const T& val) {
-        return accumulator + ((val - mean) * (val - mean) / (sz - 1));
-    };
-    return std::accumulate(vec.begin(), vec.end(), 0.0, variance_func);
 }
 
 TEST(LT, EncodeOnTheFlyIdealSolition)
