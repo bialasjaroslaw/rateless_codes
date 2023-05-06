@@ -13,6 +13,11 @@
 
 namespace Codes::Fountain {
 
+enum class Decoding{
+    Postpone,
+    Start
+};
+
 class LT
 {
 public:
@@ -28,7 +33,7 @@ public:
     void shuffle_input_symbols(bool discard = false);
     void select_symbols(size_t num, size_t max, bool discard = false);
 
-    bool feed_symbol(char* ptr, size_t number, bool deep_copy = false, bool start_decoding = true);
+    bool feed_symbol(char* ptr, size_t number, Memory mem = Memory::MakeCopy, Decoding dec = Decoding::Start);
     bool decode(bool allow_partial = false);
     void process_encoded_node(size_t num);
     void process_input_node(size_t num);

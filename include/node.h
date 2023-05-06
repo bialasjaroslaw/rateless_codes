@@ -4,10 +4,17 @@
 #include <vector>
 
 namespace Codes::Fountain {
+
+enum class Memory{
+    Owner,
+    MakeCopy,
+    View
+};
+
 struct Node
 {
     Node() = default;
-    Node(char* ptr, size_t data_length, bool deep_copy = false);
+    Node(char* ptr, size_t data_length, Memory mem = Memory::MakeCopy);
     Node(Node&&) = default;
     ~Node();
     void init_edges(std::vector<size_t> edges);

@@ -103,7 +103,7 @@ void LT::select_symbols(size_t num, size_t max, bool discard)
         _current_hash_bits.push_back(val);
 }
 
-bool LT::feed_symbol(char* ptr, size_t number, bool deep_copy, bool start_decoding)
+bool LT::feed_symbol(char* ptr, size_t number, Memory mem, Decoding dec)
 {
 #if defined(ENABLE_TRACE_LOG)
     spdlog::trace("=== FEED BEGIN ===");
@@ -118,7 +118,7 @@ bool LT::feed_symbol(char* ptr, size_t number, bool deep_copy, bool start_decodi
     spdlog::trace("Received symbol {} connected to {}", number, fmt::join(_current_hash_bits, ", "));
     spdlog::trace("Data: {:#x} {:#x}", static_cast<unsigned char>(*ptr), static_cast<unsigned char>(*(ptr + 1)));
 #endif
-    Node node(ptr, _symbol_length, deep_copy);
+    Node node(ptr, _symbol_length, mem);
     node.init_edges(std::vector<size_t>(_current_hash_bits.cbegin(), _current_hash_bits.cend()));
     ptr = node.get_data();
     for (const auto& input_node_num : _current_hash_bits)
@@ -156,7 +156,7 @@ bool LT::feed_symbol(char* ptr, size_t number, bool deep_copy, bool start_decodi
     print_hash_matrix();
     spdlog::trace("=== FEED DONE ===");
 #endif
-    return start_decoding && decode();
+    return dec == Decoding::Start && decode();
 }
 
 bool LT::decode(bool)
@@ -222,7 +222,6 @@ void LT::process_encoded_node(size_t num)
     _data_nodes[edge].swap_with(node);
     _data_nodes[edge].make_known();
     _data_nodes[edge].erase_edge(num);
-//    _data_nodes[edge].edges.erase(num);
 #if defined(ENABLE_TRACE_LOG)
     spdlog::trace("After, data {} connected with {}", edge, fmt::join(_data_nodes[edge].edges, ", "));
     auto dd = _data_nodes[edge].data.get();

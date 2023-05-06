@@ -144,6 +144,7 @@ TEST(LT, EncodeSimpleIdealSolition)
 
     while (retries--)
     {
+        using namespace Codes::Fountain;
         std::vector<char> data{};
         std::vector<char*> encoded_symbols;
         {
@@ -153,7 +154,7 @@ TEST(LT, EncodeSimpleIdealSolition)
             for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
                 memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
-            Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
+            LT encoder(new IdealSolitonDistribution);
             encoder.set_seed(seed);
             encoder.set_input_data(data.data(), data.size(), true);
             encoder.set_symbol_length(symbol_length);
@@ -161,19 +162,15 @@ TEST(LT, EncodeSimpleIdealSolition)
 
             for (auto enc_num = 0u; enc_num < encode_number; ++enc_num)
                 encoded_symbols.push_back(encoder.generate_symbol());
-
-            encoder.print_hash_matrix();
         }
         {
-            Codes::Fountain::LT decoder(new Codes::Fountain::IdealSolitonDistribution);
+            LT decoder(new IdealSolitonDistribution);
             decoder.set_seed(seed);
             decoder.set_input_data_size(total_data_size);
             decoder.set_symbol_length(symbol_length);
 
             for (auto enc_num = 0u; enc_num < encoded_symbols.size(); ++enc_num)
-                decoder.feed_symbol(encoded_symbols[enc_num], enc_num, true, false);
-
-            decoder.print_hash_matrix();
+                decoder.feed_symbol(encoded_symbols[enc_num], enc_num, Memory::View, Decoding::Postpone);
 
             ASSERT_TRUE(decoder.decode());
             auto* payload = decoder.decoded_buffer();
@@ -205,6 +202,7 @@ TEST(LT, EncodeSimpleRobustSolition)
 
     while (retries--)
     {
+        using namespace Codes::Fountain;
         std::vector<char> data{};
         std::vector<char*> encoded_symbols;
         {
@@ -214,7 +212,7 @@ TEST(LT, EncodeSimpleRobustSolition)
             for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
                 memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
 
-            Codes::Fountain::LT encoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
+            LT encoder(new RobustSolitonDistribution(0.05, 0.03));
             encoder.set_seed(seed);
             encoder.set_input_data(data.data(), data.size(), true);
             encoder.set_symbol_length(symbol_length);
@@ -222,19 +220,15 @@ TEST(LT, EncodeSimpleRobustSolition)
 
             for (auto enc_num = 0u; enc_num < encode_number; ++enc_num)
                 encoded_symbols.push_back(encoder.generate_symbol());
-
-            encoder.print_hash_matrix();
         }
         {
-            Codes::Fountain::LT decoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
+            LT decoder(new RobustSolitonDistribution(0.05, 0.03));
             decoder.set_seed(seed);
             decoder.set_input_data_size(total_data_size);
             decoder.set_symbol_length(symbol_length);
 
             for (auto enc_num = 0u; enc_num < encoded_symbols.size(); ++enc_num)
-                decoder.feed_symbol(encoded_symbols[enc_num], enc_num, true, false);
-
-            decoder.print_hash_matrix();
+                decoder.feed_symbol(encoded_symbols[enc_num], enc_num, Memory::View, Decoding::Postpone);
 
             ASSERT_TRUE(decoder.decode());
             auto* payload = decoder.decoded_buffer();
@@ -276,12 +270,13 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
     auto retries = 0u;
     while (retries < retries_max)
     {
-        Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
+        using namespace Codes::Fountain;
+        LT encoder(new IdealSolitonDistribution);
         encoder.set_seed(seed);
         encoder.set_input_data(data.data(), data.size(), true);
         encoder.set_symbol_length(symbol_length);
 
-        Codes::Fountain::LT decoder(new Codes::Fountain::IdealSolitonDistribution);
+        LT decoder(new IdealSolitonDistribution);
         decoder.set_seed(seed);
         decoder.set_input_data_size(total_data_size);
         decoder.set_symbol_length(symbol_length);
@@ -291,14 +286,14 @@ TEST(LT, EncodeOnTheFlyIdealSolition)
         while (!already_decoded)
         {
             auto symbol = encoder.generate_symbol();
-            already_decoded = decoder.feed_symbol(symbol, enc_num);
+            already_decoded = decoder.feed_symbol(symbol, enc_num, Memory::Owner, Decoding::Start);
             ++enc_num;
         }
 
         overhead[retries] = double(enc_num) / double(input_symbols) - 1.0;
 
         ASSERT_TRUE(already_decoded);
-        std::unique_ptr<char> payload(decoder.decoded_buffer());
+        std::unique_ptr<char[]> payload(decoder.decoded_buffer());
         std::vector<char> decoded(total_data_size);
         memcpy(decoded.data(), payload.get(), total_data_size);
         ASSERT_THAT(decoded, Eq(data));
@@ -337,12 +332,13 @@ TEST(LT, EncodeOnTheFlyRobustSolition)
     auto retries = 0u;
     while (retries < retries_max)
     {
-        Codes::Fountain::LT encoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
+        using namespace Codes::Fountain;
+        LT encoder(new RobustSolitonDistribution(0.05, 0.03));
         encoder.set_seed(seed);
         encoder.set_input_data(data.data(), data.size(), true);
         encoder.set_symbol_length(symbol_length);
 
-        Codes::Fountain::LT decoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
+        LT decoder(new RobustSolitonDistribution(0.05, 0.03));
         decoder.set_seed(seed);
         decoder.set_input_data_size(total_data_size);
         decoder.set_symbol_length(symbol_length);
@@ -352,14 +348,14 @@ TEST(LT, EncodeOnTheFlyRobustSolition)
         while (!already_decoded)
         {
             auto symbol = encoder.generate_symbol();
-            already_decoded = decoder.feed_symbol(symbol, enc_num);
+            already_decoded = decoder.feed_symbol(symbol, enc_num, Memory::Owner, Decoding::Start);
             ++enc_num;
         }
 
         overhead[retries] = double(enc_num) / double(input_symbols) - 1.0;
 
         ASSERT_TRUE(already_decoded);
-        std::unique_ptr<char> payload(decoder.decoded_buffer());
+        std::unique_ptr<char[]> payload(decoder.decoded_buffer());
         std::vector<char> decoded(total_data_size);
         memcpy(decoded.data(), payload.get(), total_data_size);
         ASSERT_THAT(decoded, Eq(data));

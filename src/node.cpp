@@ -4,19 +4,16 @@
 #include <cstring>
 
 namespace Codes::Fountain {
-Node::Node(char* ptr, size_t data_length, bool deep_copy)
+Node::Node(char* ptr, size_t data_length, Memory mem)
 {
-    if (ptr && deep_copy)
+    if (ptr && mem == Memory::MakeCopy)
     {
         _data.reset(new char[data_length]);
         memcpy(_data.get(), ptr, data_length);
-        _owner = true;
     }
     else
-    {
-        _owner = false;
         _data.reset(ptr);
-    }
+    _owner = mem != Memory::View;
 }
 
 Node::~Node()
