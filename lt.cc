@@ -11,19 +11,43 @@
 #include <spdlog/spdlog.h>
 
 template <typename T>
-T variance(const std::vector<T>& vec)
+T variance(const std::vector<T>& data)
 {
-    const size_t sz = vec.size();
-    if (sz <= 1)
-    {
+    const auto data_size = data.size();
+    if (data_size <= 1)
         return 0.0;
-    }
-    const T mean = std::accumulate(vec.begin(), vec.end(), 0.0) / sz;
-    auto variance_func = [&mean, &sz](T accumulator, const T& val) {
-        return accumulator + ((val - mean) * (val - mean) / (sz - 1));
-    };
-    return std::accumulate(vec.begin(), vec.end(), 0.0, variance_func);
+    const T mean_value = std::accumulate(data.begin(), data.end(), 0.0) / T(data_size);
+    return std::accumulate(data.begin(), data.end(), 0.0, [&mean_value, &data_size](T accumulator, const T& value) {
+        return accumulator + ((value - mean_value) * (value - mean_value) / (T(data_size) - T(1)));
+    });
 }
+
+template <typename T>
+T average(const std::vector<T>& data)
+{
+    const auto data_size = data.size();
+    if (data_size == 0)
+        return 0.0;
+    return std::accumulate(data.begin(), data.end(), 0.0) / T(data_size);
+}
+
+struct Timer
+{
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_point;
+    static auto now()
+    {
+        return std::chrono::high_resolution_clock::now();
+    }
+    void start()
+    {
+        start_point = now();
+    }
+    template <typename Unit = std::chrono::microseconds>
+    auto stop()
+    {
+        return std::chrono::duration_cast<Unit>(now() - start_point);
+    }
+};
 
 using namespace testing;
 
@@ -231,140 +255,120 @@ TEST(LT, EncodeSimpleRobustSolition)
 TEST(LT, EncodeOnTheFlyIdealSolition)
 {
     spdlog::set_level(spdlog::level::debug);
-    auto retries_max = 10;
-
-    auto single_data_size = 4u;
-    auto multiple_data = 5000u;
-    auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto seed = 100u;
-    auto retries = 0;
+    auto retries_max = 10u;
+
+    std::vector<double> overhead(retries_max, 0);
+    std::vector<char> data{};
+    unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
+    auto single_data_size = sizeof(raw_data);
+    auto multiple_data = 5000u;
+    auto total_data_size = single_data_size * multiple_data;
     auto input_symbols = total_data_size / symbol_length;
-    std::vector<double> required_symbol(retries_max, 0);
-    auto start = std::chrono::high_resolution_clock::now();
+
+    data.resize(total_data_size);
+    for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
+        memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
+
+    Timer tmr;
+    tmr.start();
+    auto retries = 0u;
     while (retries < retries_max)
     {
-        std::vector<char*> encoded_symbols;
+        Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
+        encoder.set_seed(seed);
+        encoder.set_input_data(data.data(), data.size(), true);
+        encoder.set_symbol_length(symbol_length);
+
+        Codes::Fountain::LT decoder(new Codes::Fountain::IdealSolitonDistribution);
+        decoder.set_seed(seed);
+        decoder.set_input_data_size(total_data_size);
+        decoder.set_symbol_length(symbol_length);
+        auto already_decoded = false;
+        auto enc_num = 0u;
+
+        while (!already_decoded)
         {
-            std::vector<char> data{};
-            unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
-
-            data.resize(total_data_size);
-            for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
-                memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
-
-            Codes::Fountain::LT encoder(new Codes::Fountain::IdealSolitonDistribution);
-            encoder.set_seed(seed);
-            encoder.set_input_data(data.data(), data.size(), true);
-            encoder.set_symbol_length(symbol_length);
-
-            Codes::Fountain::LT decoder(new Codes::Fountain::IdealSolitonDistribution);
-            decoder.set_seed(seed);
-            decoder.set_input_data_size(total_data_size);
-            decoder.set_symbol_length(symbol_length);
-            auto already_decoded = false;
-            auto enc_num = 0u;
-
-            while (!already_decoded)
-            {
-                auto symbol = encoder.generate_symbol();
-                encoded_symbols.push_back(symbol);
-                decoder.feed_symbol(symbol, enc_num);
-                already_decoded = decoder.decode(true);
-                ++enc_num;
-            }
-
-            required_symbol[retries] = static_cast<double>(enc_num - input_symbols) / input_symbols;
-
-            ASSERT_TRUE(already_decoded);
-            auto* payload = decoder.decoded_buffer();
-            std::vector<char> decoded;
-            decoded.resize(total_data_size);
-            memcpy(decoded.data(), payload, total_data_size);
-            delete[] payload;
-
-            ASSERT_THAT(decoded, Eq(data));
+            auto symbol = encoder.generate_symbol();
+            already_decoded = decoder.feed_symbol(symbol, enc_num);
+            ++enc_num;
         }
-        for (const auto* encoded_symbol : encoded_symbols)
-            delete[] encoded_symbol;
+
+        overhead[retries] = double(enc_num) / double(input_symbols) - 1.0;
+
+        ASSERT_TRUE(already_decoded);
+        std::unique_ptr<char> payload(decoder.decoded_buffer());
+        std::vector<char> decoded(total_data_size);
+        memcpy(decoded.data(), payload.get(), total_data_size);
+        ASSERT_THAT(decoded, Eq(data));
+
         ++seed;
         ++retries;
     }
-    auto average_symbol_num =
-        std::accumulate(required_symbol.cbegin(), required_symbol.cend(), 0.0) / required_symbol.size();
-    auto average_symbol_dev = std::sqrt(variance(required_symbol));
-    auto duration =
-        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
-    spdlog::debug("Iteration time {:.2f}ms, Avg/dev: {:.3f}/{:.3f}", duration.count() / 1000.0 / retries_max,
+    auto average_symbol_num = average(overhead);
+    auto average_symbol_dev = std::sqrt(variance(overhead));
+    auto duration = tmr.stop();
+    spdlog::debug("Iteration time {:.2f}ms, Avg/dev: {:.3f}/{:.3f}", double(duration.count()) / 1000.0 / retries_max,
                   average_symbol_num, average_symbol_dev);
 }
 
 TEST(LT, EncodeOnTheFlyRobustSolition)
 {
     spdlog::set_level(spdlog::level::debug);
-    auto retries_max = 10;
-
-    auto single_data_size = 4u;
-    auto multiple_data = 5000u;
-    auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto seed = 100u;
-    auto retries = 0;
+    auto retries_max = 10u;
+
+    std::vector<double> overhead(retries_max, 0);
+    std::vector<char> data{};
+    unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
+    auto single_data_size = sizeof(raw_data);
+    auto multiple_data = 5000u;
+    auto total_data_size = single_data_size * multiple_data;
     auto input_symbols = total_data_size / symbol_length;
-    std::vector<double> required_symbol(retries_max, 0);
-    auto start = std::chrono::high_resolution_clock::now();
+
+    data.resize(total_data_size);
+    for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
+        memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
+
+    Timer tmr;
+    tmr.start();
+    auto retries = 0u;
     while (retries < retries_max)
     {
-        std::vector<char*> encoded_symbols;
+        Codes::Fountain::LT encoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
+        encoder.set_seed(seed);
+        encoder.set_input_data(data.data(), data.size(), true);
+        encoder.set_symbol_length(symbol_length);
+
+        Codes::Fountain::LT decoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
+        decoder.set_seed(seed);
+        decoder.set_input_data_size(total_data_size);
+        decoder.set_symbol_length(symbol_length);
+        auto already_decoded = false;
+        auto enc_num = 0u;
+
+        while (!already_decoded)
         {
-            std::vector<char> data{};
-            unsigned char raw_data[] = {0xDE, 0xAD, 0xBE, 0xEF};
-
-            data.resize(total_data_size);
-            for (auto copy_num = 0u; copy_num < multiple_data; ++copy_num)
-                memcpy(data.data() + single_data_size * copy_num, raw_data, single_data_size);
-
-            Codes::Fountain::LT encoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
-            encoder.set_seed(seed);
-            encoder.set_input_data(data.data(), data.size(), true);
-            encoder.set_symbol_length(symbol_length);
-
-            Codes::Fountain::LT decoder(new Codes::Fountain::RobustSolitonDistribution(0.05, 0.03));
-            decoder.set_seed(seed);
-            decoder.set_input_data_size(total_data_size);
-            decoder.set_symbol_length(symbol_length);
-            auto already_decoded = false;
-            auto enc_num = 0u;
-
-            while (!already_decoded)
-            {
-                auto symbol = encoder.generate_symbol();
-                encoded_symbols.push_back(symbol);
-                already_decoded = decoder.feed_symbol(symbol, enc_num);
-                ++enc_num;
-            }
-
-            required_symbol[retries] = static_cast<double>(enc_num - input_symbols) / input_symbols;
-
-            ASSERT_TRUE(already_decoded);
-            auto* payload = decoder.decoded_buffer();
-            std::vector<char> decoded;
-            decoded.resize(total_data_size);
-            memcpy(decoded.data(), payload, total_data_size);
-            delete[] payload;
-
-            ASSERT_THAT(decoded, Eq(data));
+            auto symbol = encoder.generate_symbol();
+            already_decoded = decoder.feed_symbol(symbol, enc_num);
+            ++enc_num;
         }
-        for (const auto* encoded_symbol : encoded_symbols)
-            delete[] encoded_symbol;
+
+        overhead[retries] = double(enc_num) / double(input_symbols) - 1.0;
+
+        ASSERT_TRUE(already_decoded);
+        std::unique_ptr<char> payload(decoder.decoded_buffer());
+        std::vector<char> decoded(total_data_size);
+        memcpy(decoded.data(), payload.get(), total_data_size);
+        ASSERT_THAT(decoded, Eq(data));
         ++seed;
         ++retries;
     }
-    auto average_symbol_num =
-        std::accumulate(required_symbol.cbegin(), required_symbol.cend(), 0.0) / required_symbol.size();
-    auto average_symbol_dev = std::sqrt(variance(required_symbol));
-    auto duration =
-        std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start);
-    spdlog::debug("Iteration time {:.2f}ms, Avg/dev: {:.3f}/{:.3f}", duration.count() / 1000.0 / retries_max,
+    auto average_symbol_num = average(overhead);
+    auto average_symbol_dev = std::sqrt(variance(overhead));
+    auto duration = tmr.stop();
+    spdlog::debug("Iteration time {:.2f}ms, Avg/dev: {:.3f}/{:.3f}", double(duration.count()) / 1000.0 / retries_max,
                   average_symbol_num, average_symbol_dev);
 }

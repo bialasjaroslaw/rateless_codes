@@ -94,12 +94,12 @@ void LT::select_symbols(size_t num, size_t max, bool discard)
 {
     _current_hash_bits.clear();
     std::set<uint32_t> choosen;
-    while(choosen.size() < num)
+    while (choosen.size() < num)
     {
         auto value = _generator() % _samples.size();
         choosen.insert(value);
     }
-    for(const auto& val : choosen)
+    for (const auto& val : choosen)
         _current_hash_bits.push_back(val);
 }
 
