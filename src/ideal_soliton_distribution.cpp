@@ -1,16 +1,16 @@
 #include "ideal_soliton_distribution.h"
 
 #include <algorithm>
+#include <cmath>
 
 namespace Codes::Fountain {
 
 IdealSolitonDistribution::IdealSolitonDistribution()
-    : _degree_dist(std::uniform_real_distribution<double>())
 {}
 
 void IdealSolitonDistribution::set_seed(uint32_t seed)
 {
-    _random_engine.seed(seed);
+    _degree_dist.set_seed(seed);
 }
 
 void IdealSolitonDistribution::set_input_size(size_t input_symbols)
@@ -20,7 +20,7 @@ void IdealSolitonDistribution::set_input_size(size_t input_symbols)
 
 size_t IdealSolitonDistribution::symbol_degree()
 {
-    auto value = 1.0 / (1.0 - _degree_dist(_random_engine));
+    auto value = 1.0 / (1.0 - _degree_dist.rand_float());
     return value < _input_size ? std::ceil(value) : 1;
 }
 

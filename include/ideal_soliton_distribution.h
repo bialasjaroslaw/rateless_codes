@@ -2,9 +2,9 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <random>
 
 #include "degree_distribution.h"
+#include "well512.h"
 
 namespace Codes::Fountain {
 class IdealSolitonDistribution : public DegreeDistribution
@@ -19,8 +19,7 @@ public:
     std::vector<double> expected_distribution(size_t input_symbols) override;
 
 private:
-    std::default_random_engine _random_engine;
-    std::uniform_real_distribution<double> _degree_dist;
+    well_512 _degree_dist;
     size_t _input_size = 0;
 };
 } // namespace Codes::Fountain

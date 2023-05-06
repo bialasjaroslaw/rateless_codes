@@ -2,19 +2,19 @@
 
 #include "ideal_soliton_distribution.h"
 
+#include <cmath>
 #include <numeric>
 
 namespace Codes::Fountain {
 
 RobustSolitonDistribution::RobustSolitonDistribution(double delta, double c)
-    : _degree_dist(std::uniform_real_distribution<double>())
-    , _delta(delta)
+    : _delta(delta)
     , _c(c)
 {}
 
 void RobustSolitonDistribution::set_seed(uint32_t seed)
 {
-    _random_engine.seed(seed);
+    _degree_dist.set_seed(seed);
 }
 
 void RobustSolitonDistribution::set_input_size(size_t input_symbols)
@@ -32,7 +32,7 @@ void RobustSolitonDistribution::set_input_size(size_t input_symbols)
 
 size_t RobustSolitonDistribution::symbol_degree()
 {
-    auto value = _degree_dist(_random_engine);
+    auto value = _degree_dist.rand_float();
     auto it = std::lower_bound(_cumulative_probabilities.cbegin(), _cumulative_probabilities.cend(), value);
     return it == _cumulative_probabilities.cend() ? _cumulative_probabilities.size()
                                                   : std::distance(_cumulative_probabilities.cbegin(), it) + 1;

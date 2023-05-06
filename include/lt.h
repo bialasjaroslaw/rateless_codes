@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <random>
 #include <vector>
 
 #include <cstring>
@@ -13,7 +12,8 @@
 
 namespace Codes::Fountain {
 
-enum class Decoding{
+enum class Decoding
+{
     Postpone,
     Start
 };

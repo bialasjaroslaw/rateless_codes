@@ -5,7 +5,8 @@
 
 namespace Codes::Fountain {
 
-enum class Memory{
+enum class Memory
+{
     Owner,
     MakeCopy,
     View

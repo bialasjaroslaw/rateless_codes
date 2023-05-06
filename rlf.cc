@@ -7,12 +7,30 @@
 
 using namespace testing;
 
+TEST(Well512, BitDistribution)
+{
+    spdlog::set_level(spdlog::level::debug);
+    well_512 generator;
+    generator.set_seed(13u);
+
+    auto total_samples = 10'000'000u;
+    auto sum_values = 0u;
+
+    for (auto idx = 0u; idx < total_samples; ++idx)
+    {
+        auto val = generator.rand_bit();
+        sum_values += val;
+    }
+    auto avg = double(sum_values) / double(total_samples);
+    EXPECT_THAT(avg, DoubleNear(0.5, 0.0001));
+}
+
 TEST(RLF, EncodeSimple)
 {
     spdlog::set_level(spdlog::level::debug);
     std::vector<char*> encoded_symbols;
     auto single_data_size = 4u;
-    auto multiple_data = 1u;
+    auto multiple_data = 500u;
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto input_symbol_num = total_data_size / symbol_length;
@@ -34,8 +52,6 @@ TEST(RLF, EncodeSimple)
 
         for (auto enc_num = 0u; enc_num < encode_number; ++enc_num)
             encoded_symbols.push_back(encoder.generate_symbol());
-
-        encoder.print_hash_matrix();
     }
     {
         Codes::Fountain::RLF decoder;
@@ -45,8 +61,6 @@ TEST(RLF, EncodeSimple)
 
         for (auto enc_num = 0u; enc_num < encoded_symbols.size(); ++enc_num)
             decoder.feed_symbol(encoded_symbols[enc_num], enc_num, true);
-
-        decoder.print_hash_matrix();
 
         ASSERT_TRUE(decoder.decode());
         auto* payload = decoder.decoded_buffer();
@@ -67,7 +81,7 @@ TEST(RLF, EncodeOnTheFly)
     spdlog::set_level(spdlog::level::debug);
     std::vector<char*> encoded_symbols;
     auto single_data_size = 4u;
-    auto multiple_data = 1u;
+    auto multiple_data = 500u;
     auto total_data_size = single_data_size * multiple_data;
     auto symbol_length = 2u;
     auto input_symbol_num = total_data_size / symbol_length;
@@ -89,8 +103,6 @@ TEST(RLF, EncodeOnTheFly)
 
         for (auto enc_num = 0u; enc_num < encode_number; ++enc_num)
             encoded_symbols.push_back(encoder.generate_symbol());
-
-        encoder.print_hash_matrix();
     }
     {
         Codes::Fountain::RLF decoder;
@@ -102,13 +114,9 @@ TEST(RLF, EncodeOnTheFly)
         for (auto enc_num = 0u; enc_num < encoded_symbols.size(); ++enc_num)
         {
             decoder.feed_symbol(encoded_symbols[enc_num], enc_num, true);
-            spdlog::trace("After new symbol has arrived");
-            decoder.print_hash_matrix();
             already_decoded = decoder.decode(true);
             if (already_decoded)
                 break;
-            spdlog::trace("After partial decode");
-            decoder.print_hash_matrix();
         }
 
         ASSERT_TRUE(already_decoded);

@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <random>
+#include <vector>
 
+#include "well512.h"
 
 namespace Codes {
 namespace Fountain {
@@ -26,7 +27,7 @@ public:
 
     void print_hash_matrix();
 
-
+    well_512 _generator;
     size_t _symbol_length = 0;
     size_t _input_symbols = 0;
     size_t _input_data_size = 0;
@@ -38,10 +39,6 @@ public:
     std::vector<uint8_t*> _hash_bits;
     std::vector<uint8_t> _current_hash_bits;
     size_t _current_symbol = 0;
-
-
-    std::default_random_engine _random_engine;
-    std::uniform_int_distribution<int> _uniform_dist;
 };
 } // namespace Fountain
 } // namespace Codes
