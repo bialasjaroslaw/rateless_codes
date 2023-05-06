@@ -8,7 +8,6 @@
 namespace Codes::Fountain {
 
 RLF::RLF()
-    : _uniform_dist(std::uniform_int_distribution<int>(0, 1))
 {}
 
 RLF::~RLF()
@@ -55,8 +54,6 @@ char* RLF::generate_symbol()
     memset(ptr, 0, _symbol_length);
     auto* input = _input_data;
 
-    // debug only
-
     shuffle_input_symbols();
 
     auto hash_sequence = new uint8_t[_input_symbols];
@@ -67,7 +64,6 @@ char* RLF::generate_symbol()
 
     for (auto idx = 0; idx < _input_symbols; ++idx)
     {
-        // change this after debug remove
         if (hash_sequence[idx])
             for (auto sym_idx = 0; sym_idx < _symbol_length; ++sym_idx)
                 ptr[sym_idx] ^= input[sym_idx];
@@ -79,7 +75,7 @@ char* RLF::generate_symbol()
 
 void RLF::set_seed(uint32_t seed)
 {
-    _random_engine.seed(seed);
+    _generator.set_seed(seed);
 }
 
 void RLF::shuffle_input_symbols(bool discard)
@@ -91,9 +87,9 @@ void RLF::shuffle_input_symbols(bool discard)
     }
     for (auto idx = 0; idx < _input_symbols; ++idx)
         if (!discard)
-            _current_hash_bits[idx] = _uniform_dist(_random_engine);
+            _current_hash_bits[idx] = _generator.rand_bit();
         else
-            _uniform_dist(_random_engine);
+            _generator.rand_bit();
     ++_current_symbol;
 }
 
@@ -164,10 +160,10 @@ bool RLF::decode(bool allow_partial)
             }
         }
     }
-
+#if defined(ENABLE_TRACE_LOG)
     spdlog::trace("after triangle");
     print_hash_matrix();
-
+#endif
     auto valid_traingle_matrix = _encoded_data.size() >= _input_symbols;
 
     for (auto idx = size_t{0}; idx < std::min(_encoded_data.size(), _input_symbols); ++idx)
@@ -189,10 +185,10 @@ bool RLF::decode(bool allow_partial)
             }
         }
     }
-
+#if defined(ENABLE_TRACE_LOG)
     spdlog::trace("after back subs");
     print_hash_matrix();
-
+#endif
     return valid_traingle_matrix;
 }
 

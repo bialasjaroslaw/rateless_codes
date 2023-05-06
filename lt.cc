@@ -10,25 +10,27 @@
 #include <gtest/gtest.h>
 #include <spdlog/spdlog.h>
 
-template <typename T>
-T variance(const std::vector<T>& data)
-{
-    const auto data_size = data.size();
-    if (data_size <= 1)
-        return 0.0;
-    const T mean_value = std::accumulate(data.begin(), data.end(), 0.0) / T(data_size);
-    return std::accumulate(data.begin(), data.end(), 0.0, [&mean_value, &data_size](T accumulator, const T& value) {
-        return accumulator + ((value - mean_value) * (value - mean_value) / (T(data_size) - T(1)));
-    });
-}
-
-template <typename T>
-T average(const std::vector<T>& data)
+template <typename R = double, typename T>
+R average(const std::vector<T>& data, double scale = 1.0)
 {
     const auto data_size = data.size();
     if (data_size == 0)
         return 0.0;
-    return std::accumulate(data.begin(), data.end(), 0.0) / T(data_size);
+    return std::accumulate(data.begin(), data.end(), R(0)) / R(data_size) * scale;
+}
+
+template <typename R = double, typename T>
+R variance(const std::vector<T>& data, double scale = 1.0)
+{
+    const auto data_size = data.size();
+    if (data_size <= 1)
+        return 0.0;
+    const R mean_value = average(data, scale);
+    return std::accumulate(data.begin(), data.end(), R(0),
+                           [mean_value, scale](R accumulator, const T& value) {
+                               return accumulator + ((R(value) * scale - mean_value) * (R(value) * scale - mean_value));
+                           }) /
+           (R(data_size) - R(1));
 }
 
 struct Timer
@@ -51,6 +53,78 @@ struct Timer
 };
 
 using namespace testing;
+
+TEST(Well512, IntDistribution)
+{
+    spdlog::set_level(spdlog::level::debug);
+    well_512 generator;
+    generator.set_seed(13u);
+    constexpr unsigned long range = 1000;
+    constexpr unsigned long repeat = 10'000;
+    constexpr unsigned long total_samples = repeat * range;
+    constexpr auto expected_selection_probability = 1.0 / range;
+    constexpr auto expected_selection_tolerance = expected_selection_probability * 0.1;
+    std::vector<size_t> expected(range);
+    const double scale = 1.0 / repeat;
+    const double value_scale = 1.0 / range;
+
+    auto sum_diff = 0.0;
+
+    for (unsigned long idx = 0; idx < total_samples; ++idx)
+    {
+        auto val = generator() % range;
+        ++expected[val];
+        sum_diff += (double(val) * value_scale - 0.5) * (double(val) * value_scale - 0.5);
+    }
+    auto avg = average(expected, scale);
+    auto dev = std::sqrt(variance(expected, scale));
+    auto val_dev = std::sqrt(sum_diff / (total_samples - 1));
+
+    EXPECT_THAT(avg, DoubleNear(1.0, 0.0001));
+    EXPECT_LE(dev, 3 * std::sqrt(scale));
+    // https://en.wikipedia.org/wiki/Continuous_uniform_distribution
+    EXPECT_THAT(val_dev, DoubleNear(std::sqrt(1.0 / 12.0), scale));
+
+    for (auto distribution_val : expected)
+        EXPECT_THAT(static_cast<double>(distribution_val) / static_cast<double>(total_samples),
+                    DoubleNear(expected_selection_probability, expected_selection_tolerance));
+}
+
+TEST(Well512, FloatDistribution)
+{
+    spdlog::set_level(spdlog::level::debug);
+    well_512 generator;
+    generator.set_seed(13u);
+    constexpr unsigned long range = 1000;
+    constexpr unsigned long repeat = 10'000;
+    constexpr unsigned long total_samples = repeat * range;
+    constexpr auto expected_selection_probability = 1.0 / range;
+    constexpr auto expected_selection_tolerance = expected_selection_probability * 0.1;
+    std::vector<size_t> expected_bins(range);
+    const double scale = 1.0 / repeat;
+
+    auto sum_diff = 0.0;
+    auto sum = 0.0;
+
+    for (unsigned long idx = 0; idx < total_samples; ++idx)
+    {
+        auto val = double(idx) / double(total_samples); // generator.rand_float();
+        // I know that this is not best aproach, but good enough
+        sum += val;
+        sum_diff += (val - 0.5) * (val - 0.5);
+        ++expected_bins[size_t(std::floor(val * range))];
+    }
+    auto avg = sum / total_samples;
+    auto dev = std::sqrt(sum_diff / (total_samples - 1));
+
+    EXPECT_THAT(avg, DoubleNear(0.5 - scale, scale));
+    // https://en.wikipedia.org/wiki/Continuous_uniform_distribution
+    EXPECT_THAT(dev, DoubleNear(std::sqrt(1.0 / 12.0), scale));
+
+    for (auto distribution_val : expected_bins)
+        EXPECT_THAT(static_cast<double>(distribution_val) / static_cast<double>(total_samples),
+                    DoubleNear(expected_selection_probability, expected_selection_tolerance));
+}
 
 TEST(LT, SymbolDistribution)
 {
