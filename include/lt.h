@@ -1,53 +1,27 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
-#include <cstring>
-#include <map>
-#include <memory>
 #include <random>
-#include <set>
+#include <vector>
 
+#include <cstring>
 
-namespace Codes {
-namespace Fountain {
+#include "degree_distribution.h"
+#include "node.h"
+#include "well512.h"
 
-struct Node
-{
-    Node() = default;
-    Node(char* ptr, size_t data_length, bool deep_copy = false)
-    {
-        if (ptr && deep_copy)
-        {
-            data.reset(new char[data_length]);
-            memcpy(data.get(), ptr, data_length);
-            owner = true;
-        }
-        else
-        {
-            owner = false;
-            data.reset(ptr);
-        }
-    }
-    Node(Node&&) = default;
-    ~Node()
-    {
-        if (!owner)
-            data.release();
-    }
-    char& operator[](size_t idx)
-    {
-        return data.get()[idx];
-    }
-    std::set<size_t> edges;
-    std::unique_ptr<char[]> data;
-    bool known = false;
-    bool owner = true;
+namespace Codes::Fountain {
+
+enum class Decoding{
+    Postpone,
+    Start
 };
 
 class LT
 {
 public:
-    LT();
+    explicit LT(DegreeDistribution* distribution);
     virtual ~LT();
 
     void set_input_data(char* ptr, size_t len, bool deep_copy = false);
@@ -59,7 +33,7 @@ public:
     void shuffle_input_symbols(bool discard = false);
     void select_symbols(size_t num, size_t max, bool discard = false);
 
-    void feed_symbol(char* ptr, size_t number, bool deep_copy = false, bool start_decoding = true);
+    bool feed_symbol(char* ptr, size_t number, Memory mem = Memory::MakeCopy, Decoding dec = Decoding::Start);
     bool decode(bool allow_partial = false);
     void process_encoded_node(size_t num);
     void process_input_node(size_t num);
@@ -68,20 +42,18 @@ public:
 
     void print_hash_matrix();
 
-
+    std::unique_ptr<DegreeDistribution> _degree_dist;
     size_t _symbol_length = 0;
     size_t _input_symbols = 0;
     size_t _input_data_size = 0;
     char* _input_data = nullptr;
     bool _owner = false;
 
-    std::vector<uint8_t*> _hash_bits;
     std::vector<uint32_t> _current_hash_bits;
     std::vector<uint32_t> _samples;
     size_t _current_symbol = 0;
 
-    std::default_random_engine _random_engine;
-    std::uniform_real_distribution<double> _degree_dist;
+    well_512 _generator;
 
     std::vector<Node> _data_nodes;
     std::vector<Node> _encoded_nodes;
@@ -91,5 +63,4 @@ public:
 
     size_t _unknown_blocks = 0;
 };
-} // namespace Fountain
-} // namespace Codes
+} // namespace Codes::Fountain
