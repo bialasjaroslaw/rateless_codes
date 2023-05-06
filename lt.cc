@@ -33,19 +33,20 @@ T average(const std::vector<T>& data)
 
 struct Timer
 {
-    std::chrono::time_point<std::chrono::high_resolution_clock> start_point;
-    static auto now()
+    using TimePoint = std::chrono::time_point<std::chrono::high_resolution_clock>;
+    TimePoint start_point;
+    static TimePoint now()
     {
         return std::chrono::high_resolution_clock::now();
     }
     void start()
     {
-        start_point = now();
+        start_point = Timer::now();
     }
     template <typename Unit = std::chrono::microseconds>
     auto stop()
     {
-        return std::chrono::duration_cast<Unit>(now() - start_point);
+        return std::chrono::duration_cast<Unit>(Timer::now() - start_point);
     }
 };
 
