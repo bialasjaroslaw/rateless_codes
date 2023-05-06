@@ -3,8 +3,10 @@
 #include <cstdint>
 #include <cstring>
 
+// https://www.lomont.org/papers/2008/Lomont_PRNG_2008.pdf
 struct well_512
 {
+    // Naive way of setting seed, but nothing better is needed for now
     void set_seed(uint32_t seed)
     {
         auto state_mem = reinterpret_cast<char*>(state);
@@ -13,7 +15,7 @@ struct well_512
         index = 0;
     }
 
-    unsigned long state[16] = {};
+    unsigned long state[16] = {0};
     unsigned int index = 0;
 
     unsigned long operator()()
