@@ -74,7 +74,7 @@ jobs:
       with:
         # This one is not needed, as it is the default value anyway.
         # vcpkgDirectory: '${{ github.workspace }}/vcpkg'
-        vcpkgGitCommitId: '8daf70c56ba9581f5251a5d4675eb771b6b34957'
+        vcpkgGitCommitId: 'c9919121dde6f61c0436adda94624636e041226b'
         vcpkgJsonGlob: '**/vcpkg.json'
         appendedCacheKey: 'compiler=${{matrix.compiler}}'
 
